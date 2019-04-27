@@ -23,8 +23,10 @@ public class App {
 		if (args.length > 0) {
 			port(Integer.parseInt(args[0]));
 		} else {
-			port(8080);
+			port(getHerokuAssignedPort());
 		}
+		
+		
 
 		// objects for data stored in the service
 		
@@ -45,6 +47,69 @@ public class App {
 		
 		// TODO: implement the routes required for the access control service
 		
+		post("/accessdevice/log", (req, res) -> {
+			
+			Gson gson = new Gson();
+			
+			AccessMessage newMessage = gson.fromJson(req.body(), AccessMessage.class);
+			
+			int idAdded = accesslog.add(newMessage.getMessage());
+			
+			return gson.toJson(accesslog.get(idAdded));
+		});
+		
+		get("/accessdevice/log", (req, res) -> {
+			
+			return accesslog.toJson();
+		});
+		
+		get("/accessdevice/log/:id", (req, res) -> {
+			
+			Gson gson = new Gson();
+			
+			int id = Integer.parseInt(req.params(":id"));
+			
+			return gson.toJson(accesslog.get(id)); 
+		});
+		
+		//hvorfor returnerer man alltid det samme man sender? Vet ikke klienten det samme da?
+		//Er det bare slik man gjør, siden klienten sin kopi regnes som gammel?
+		
+		// Skal man her bruke immutable eller mutable objekter her?
+		put("/accessdevice/code", (req, res) -> {
+			
+			Gson gson = new Gson();
+					
+			AccessCode newCode = gson.fromJson(req.body(), AccessCode.class);
+			
+			accesscode = newCode;
+			
+			return gson.toJson(accesscode);
+			
+		});
+		
+		get("/accessdevice/code", (req,res) -> {
+			
+			Gson gson = new Gson();
+			
+			return gson.toJson(accesscode);
+		});
+		
+		delete("/accessdevice/log", (req,res) -> {
+			
+			accesslog.clear();
+			
+			return accesslog.toJson();
+		});
+		
+    }
+	
+    static int getHerokuAssignedPort() {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (processBuilder.environment().get("PORT") != null) {
+            return Integer.parseInt(processBuilder.environment().get("PORT"));
+        }
+        return 8080; //return default port if heroku-port isn't set (i.e. on localhost)
     }
     
 }
